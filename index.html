@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>JARVIS — Spotify Token</title>
+<style>
+  body { background: #020609; color: #c8f0ff; font-family: 'Courier New', monospace; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; }
+  .box { max-width: 480px; width: 90%; border: 1px solid rgba(0,212,255,0.3); padding: 2rem; border-radius: 4px; background: rgba(0,180,255,0.04); }
+  h2 { color: #00d4ff; letter-spacing: 0.3em; font-size: 14px; margin-bottom: 1.5rem; text-align: center; }
+  .step { margin-bottom: 1.2rem; font-size: 12px; line-height: 1.7; color: #8ab; }
+  .step span { color: #00d4ff; }
+  button { width: 100%; padding: 10px; background: rgba(0,212,255,0.1); border: 1px solid rgba(0,212,255,0.4); color: #00d4ff; font-family: 'Courier New', monospace; font-size: 12px; letter-spacing: 0.2em; cursor: pointer; border-radius: 2px; margin-top: 0.5rem; }
+  button:hover { background: rgba(0,212,255,0.2); }
+  .token-box { width: 100%; padding: 10px; background: rgba(0,0,0,0.5); border: 1px solid rgba(29,185,84,0.5); color: #1db954; font-family: 'Courier New', monospace; font-size: 11px; border-radius: 2px; word-break: break-all; margin-top: 1rem; min-height: 60px; cursor: pointer; }
+  .success { color: #1db954; font-size: 12px; letter-spacing: 0.15em; text-align: center; margin-top: 1rem; }
+  .hidden { display: none; }
+</style>
+</head>
+<body>
+<div class="box">
+  <h2>J.A.R.V.I.S — SPOTIFY LINK</h2>
+
+  <div id="step1-wrap">
+    <div class="step"><span>STEP 1</span> — Click the button below to log in to Spotify and authorise JARVIS.</div>
+    <button onclick="doLogin()">LOGIN WITH SPOTIFY</button>
+  </div>
+
+  <div id="step2-wrap" class="hidden">
+    <div class="step"><span>STEP 2</span> — Your token is ready! Click the box below to copy it, then go back to JARVIS and paste it in.</div>
+    <div class="token-box" id="token-display" onclick="copyToken()">Loading...</div>
+    <div class="success hidden" id="copied-msg">✓ COPIED — Paste into JARVIS now!</div>
+    <button onclick="copyToken()" style="margin-top:1rem;">COPY TOKEN</button>
+  </div>
+</div>
+
+<script>
+const CLIENT_ID = '75228a87ba244bce982b993ea0aff293';
+const REDIRECT_URI = location.href.split('?')[0].split('#')[0];
+const SCOPES = 'user-read-playback-state user-modify-playback-state user-read-currently-playing';
+
+function generateRandom(len) {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  const arr = new Uint8Array(len);
+  crypto.getRandomValues(arr);
+  return Array.from(arr).map(b => chars[b % chars.length]).join('');
+}
+
+async function sha256(plain) {
+  const enc = new TextEncoder().encode(plain);
+  const digest = await crypto.subtle.digest('SHA-256', enc);
+  return btoa(String.fromCharCode(...new Uint8Array(digest)))
+    .replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+}
+
+async function doLogin() {
+  const verifier = generateRandom(64);
+  const challenge = await sha256(verifier);
+  localStorage.setItem('sp_verifier', verifier);
+
+  const params = new URLSearchParams({
+    client_id: CLIENT_ID,
+    response_type: 'code',
+    redirect_uri: REDIRECT_URI,
+    scope: SCOPES,
+    code_challenge_method: 'S256',
+    code_challenge: challenge
+  });
+  window.location.href = 'https://accounts.spotify.com/authorize?' + params;
+}
+
+async function handleCallback() {
+  const code = new URLSearchParams(location.search).get('code');
+  if (!code) return;
+
+  // Clean URL
+  history.replaceState({}, '', location.pathname);
+
+  const verifier = localStorage.getItem('sp_verifier');
+  document.getElementById('step1-wrap').classList.add('hidden');
+  document.getElementById('step2-wrap').classList.remove('hidden');
+  document.getElementById('token-display').textContent = 'Fetching token...';
+
+  const res = await fetch('https://accounts.spotify.com/api/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      client_id: CLIENT_ID,
+      grant_type: 'authorization_code',
+      code,
+      redirect_uri: REDIRECT_URI,
+      code_verifier: verifier
+    })
+  });
+
+  const data = await res.json();
+  if (data.access_token) {
+    document.getElementById('token-display').textContent = data.access_token;
+    localStorage.removeItem('sp_verifier');
+  } else {
+    document.getElementById('token-display').textContent = 'ERROR: ' + (data.error_description || JSON.stringify(data));
+  }
+}
+
+function copyToken() {
+  const token = document.getElementById('token-display').textContent;
+  navigator.clipboard.writeText(token).then(() => {
+    document.getElementById('copied-msg').classList.remove('hidden');
+  });
+}
+
+handleCallback();
+</script>
+</body>
+</html>
