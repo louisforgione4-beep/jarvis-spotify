@@ -1,8 +1,4 @@
 
-
-
- 
- 
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1322,7 +1318,7 @@ async function processCommand(text) {
   // Handle stop/pause music — check first so it doesn't go to AI
   if (lower.includes('stop music') || lower.includes('stop the music') || lower.includes('pause music') || lower.includes('pause the music') || lower === 'stop' || lower === 'pause') {
     btn.classList.remove('thinking');
-    if (window.ytPlayer && ytPlayer.pauseVideo) { ytPlayer.pauseVideo(); playerDiv.style.display = 'none'; }
+    if (window.ytPlayer && ytPlayer.pauseVideo) { ytPlayer.pauseVideo(); } if (window.playerDiv) { playerDiv.style.display = 'none'; } document.getElementById('yt-now-playing').style.display = 'none';
     const reply = 'Stopping the music, sir.';
     jarvisSpeak(reply);
     setStatus(reply);
