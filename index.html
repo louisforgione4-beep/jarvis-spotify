@@ -1,7 +1,8 @@
 
 
 
-
+ 
+ 
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1572,10 +1573,21 @@ function handleYTVoiceCommand(lower) {
     window.open('https://music.youtube.com', '_blank');
     return 'Opening YouTube Music, sir.';
   }
+  if (lower.includes('stop music') || lower.includes('pause music') || lower === 'stop' || lower === 'pause') {
+    if (ytPlayer && ytPlayer.pauseVideo) { ytPlayer.pauseVideo(); playerDiv.style.display = 'none'; }
+    return 'Stopping the music, sir.';
+  }
+  if (lower.includes('resume music') || lower === 'resume' || lower.includes('unpause')) {
+    if (ytPlayer && ytPlayer.playVideo) { ytPlayer.playVideo(); playerDiv.style.display = 'block'; }
+    return 'Resuming playback, sir.';
+  }
+  if (lower.includes('next song') || lower.includes('skip song') || lower === 'skip') {
+    if (ytPlayer && ytPlayer.nextVideo) ytPlayer.nextVideo();
+    return 'Skipping track, sir.';
+  }
   const m = lower.match(/^play (.+)/);
   if (m) {
     let query = m[1].replace(/on youtube(\s+music)?$/i, '').trim();
-    // Check mood map first
     const mood = moodMap[query.toLowerCase()];
     if (mood) query = mood;
     if (query.length > 1) {
