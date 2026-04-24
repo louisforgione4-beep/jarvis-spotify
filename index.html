@@ -4,7 +4,6 @@
  
  
 
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1321,6 +1320,27 @@ async function processCommand(text) {
       return;
     }
   }
+  // Handle lyrics search
+  const lyricsMatch = lower.match(/(?:what(?:'s| is) the song that goes|what song goes|what's the song|find the song|song that goes)\s+(.+)/i);
+  if (lyricsMatch) {
+    btn.classList.remove('thinking');
+    const lyrics = lyricsMatch[1].trim();
+    const reply = 'Let me find that song for you, sir.';
+    jarvisSpeak(reply);
+    setStatus(reply);
+    setMode('STANDBY');
+    // Search Google for the lyrics
+    window.open('https://www.google.com/search?q=' + encodeURIComponent('song lyrics: ' + lyrics), '_blank');
+    // Also ask Groq to identify it
+    setTimeout(async () => {
+      const aiReply = await callAI([{role:'user', content:'What song has these lyrics: "' + lyrics + '"? Just tell me the song name and artist, nothing else.'}], 'You are a music expert. Identify songs from lyrics. Be very brief.');
+      jarvisSpeak(aiReply);
+      setStatus(aiReply);
+    }, 500);
+    return;
+  }
+
+
   // Handle YouTube Music voice commands
   const ytReply = handleYTVoiceCommand(lower);
   if (ytReply) {
@@ -1365,26 +1385,6 @@ async function processCommand(text) {
       setStatus(reply);
     }
     setMode('STANDBY');
-    return;
-  }
-
-  // Handle lyrics search
-  const lyricsMatch = lower.match(/(?:what(?:'s| is) the song that goes|what song goes|what's the song|find the song|song that goes)\s+(.+)/i);
-  if (lyricsMatch) {
-    btn.classList.remove('thinking');
-    const lyrics = lyricsMatch[1].trim();
-    const reply = 'Let me find that song for you, sir.';
-    jarvisSpeak(reply);
-    setStatus(reply);
-    setMode('STANDBY');
-    // Search Google for the lyrics
-    window.open('https://www.google.com/search?q=' + encodeURIComponent('song lyrics: ' + lyrics), '_blank');
-    // Also ask Groq to identify it
-    setTimeout(async () => {
-      const aiReply = await callAI([{role:'user', content:'What song has these lyrics: "' + lyrics + '"? Just tell me the song name and artist, nothing else.'}], 'You are a music expert. Identify songs from lyrics. Be very brief.');
-      jarvisSpeak(aiReply);
-      setStatus(aiReply);
-    }, 500);
     return;
   }
 
