@@ -3,7 +3,6 @@
 
  
  
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1320,6 +1319,26 @@ async function processCommand(text) {
       return;
     }
   }
+  // Handle stop/pause music — check first so it doesn't go to AI
+  if (lower.includes('stop music') || lower.includes('stop the music') || lower.includes('pause music') || lower.includes('pause the music') || lower === 'stop' || lower === 'pause') {
+    btn.classList.remove('thinking');
+    if (window.ytPlayer && ytPlayer.pauseVideo) { ytPlayer.pauseVideo(); playerDiv.style.display = 'none'; }
+    const reply = 'Stopping the music, sir.';
+    jarvisSpeak(reply);
+    setStatus(reply);
+    setMode('STANDBY');
+    return;
+  }
+  if (lower.includes('resume music') || lower.includes('resume the music') || lower === 'resume' || lower.includes('unpause')) {
+    btn.classList.remove('thinking');
+    if (window.ytPlayer && ytPlayer.playVideo) { ytPlayer.playVideo(); playerDiv.style.display = 'block'; }
+    const reply = 'Resuming playback, sir.';
+    jarvisSpeak(reply);
+    setStatus(reply);
+    setMode('STANDBY');
+    return;
+  }
+
   // Handle lyrics search
   const lyricsMatch = lower.match(/(?:what(?:'s| is) the song that goes|what song goes|what's the song|find the song|song that goes)\s+(.+)/i);
   if (lyricsMatch) {
