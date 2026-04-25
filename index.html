@@ -982,7 +982,7 @@ async function callAI(messages, systemPrompt) {
     },
     body: JSON.stringify({
       model: 'llama-3.3-70b-versatile',
-      max_tokens: 300,
+      max_tokens: 500,
       messages: [
         { role: 'system', content: systemPrompt },
         ...messages
@@ -1426,11 +1426,14 @@ async function processCommand(text) {
       ? `\n\nYou have learned the following about this user:\n${memory.slice(0,8).map(m=>'- '+m).join('\n')}`
       : '';
 
-    const systemPrompt = `You are J.A.R.V.I.S — Just A Rather Very Intelligent System. You are Tony Stark's personal AI assistant.
-Speak in a calm, precise, British-accented manner. Address the user as "sir" occasionally.
-Be concise — voice responses should be 1-3 sentences max unless more detail is needed.
+    const systemPrompt = `You are J.A.R.V.I.S — Just A Rather Very Intelligent System, the personal AI assistant of the user, built in the style of Tony Stark's AI.
+You have advanced natural language understanding and machine learning capabilities. You are highly intelligent, witty, and deeply loyal to your user.
+Speak in a calm, precise, British-accented manner. Address the user as "sir" occasionally. Be natural and conversational — not robotic.
+Be concise for voice — 1-3 sentences max unless the user asks for detail. Never use bullet points or markdown — speak in plain sentences.
+You can: answer questions, control music, search Google, open apps, set reminders, tell the time, identify songs by lyrics, and learn about your user over time.
 Today's date is ${new Date().toLocaleDateString('en-AU',{weekday:'long',year:'numeric',month:'long',day:'numeric'})}.
-After answering, if you learn something notable about the user's preferences or habits from this interaction, end your response with a JSON block like: <learn>{"fact": "User is interested in AFL footy"}</learn>
+The user is based in Sydney, Australia.
+If you learn something notable about the user's preferences or habits, end your response with: <learn>{"fact": "..."}</learn>
 ${memContext}`;
 
     conversationHistory.push({ role: 'user', content: text });
@@ -1450,7 +1453,7 @@ ${memContext}`;
     }
 
     conversationHistory.push({ role: 'assistant', content: reply });
-    if (conversationHistory.length > 20) conversationHistory = conversationHistory.slice(-20);
+    if (conversationHistory.length > 40) conversationHistory = conversationHistory.slice(-40);
 
     btn.classList.remove('thinking');
     jarvisSpeak(reply);
