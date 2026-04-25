@@ -1213,10 +1213,11 @@ function startListening() {
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SR) { showToast('ERROR', 'Speech recognition requires Chrome or Edge.'); return; }
   recognition = new SR();
-  recognition.continuous = false;
+  recognition.continuous = true;
   recognition.interimResults = true;
   recognition.lang = 'en-AU';
   let final = '';
+  let silenceTimer = null;
 
   recognition.onstart = () => {
     isListening = true;
@@ -1224,31 +1225,41 @@ function startListening() {
     btn.classList.add('listening'); if(window.setGlobeState) window.setGlobeState('listening');
     setMode('LISTENING');
     setStatus('Listening, sir...', 'user');
+    // Auto stop after 8 seconds if no final result
+    silenceTimer = setTimeout(() => { recognition.stop(); }, 8000);
   };
 
   recognition.onresult = e => {
     let interim = '';
     for (let i = e.resultIndex; i < e.results.length; i++) {
-      if (e.results[i].isFinal) final += e.results[i][0].transcript;
-      else interim += e.results[i][0].transcript;
+      if (e.results[i].isFinal) {
+        final += e.results[i][0].transcript;
+        // Got a final result — stop listening
+        clearTimeout(silenceTimer);
+        recognition.stop();
+      } else {
+        interim += e.results[i][0].transcript;
+      }
     }
     setStatus((final||interim), 'user');
   };
 
   recognition.onend = () => {
     isListening = false;
+    clearTimeout(silenceTimer);
     const btn = document.getElementById('globe-wrap') || document.getElementById('core-btn');
     btn.classList.remove('listening');
     if (final.trim()) processCommand(final.trim());
-    else { setStatus('No input detected. Tap to try again.'); setMode('STANDBY'); }
+    else { setStatus('Tap to speak, sir.'); setMode('STANDBY'); }
   };
 
   recognition.onerror = e => {
     isListening = false;
+    clearTimeout(silenceTimer);
     document.getElementById('core-btn').classList.remove('listening');
-    if (e.error !== 'no-speech') showToast('MIC ERROR', e.error);
+    if (e.error === 'no-speech') { setStatus('Tap to speak, sir.'); }
+    else { showToast('MIC ERROR', e.error); setStatus('Microphone error.', 'jarvis'); }
     setMode('STANDBY');
-    setStatus('Microphone error. Please allow access.', 'jarvis');
   };
 
   recognition.start();
