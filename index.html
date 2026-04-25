@@ -1237,6 +1237,8 @@ function startListening() {
   };
 
   recognition.onend = () => {
+    // Restart wake word listener after command finishes
+    setTimeout(() => { if (!isListening) startWakeListener(); }, 1000);
     isListening = false;
     const btn = document.getElementById('globe-wrap') || document.getElementById('core-btn');
     btn.classList.remove('listening');
@@ -1842,6 +1844,62 @@ async function searchAndPlay(query) {
 }
 
 loadYTPlayer();
+
+
+/* ══════════════════════════════════════════
+   WAKE WORD LISTENER — "HEY JARVIS"
+══════════════════════════════════════════ */
+let wakeRecognition = null;
+let wakeListening = false;
+
+function startWakeListener() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) return;
+
+  wakeRecognition = new SR();
+  wakeRecognition.continuous = true;
+  wakeRecognition.interimResults = true;
+  wakeRecognition.lang = 'en-AU';
+
+  wakeRecognition.onresult = (e) => {
+    const transcript = Array.from(e.results)
+      .map(r => r[0].transcript.toLowerCase())
+      .join(' ');
+
+    // Detect wake word
+    if (transcript.includes('hey jarvis') || transcript.includes('jarvis') && transcript.includes('hey')) {
+      wakeRecognition.stop();
+      wakeListening = false;
+      // Flash the button to show wake word detected
+      setStatus('Wake word detected, sir. Listening...');
+      jarvisSpeak('Yes sir?');
+      setTimeout(() => {
+        toggleListen(); // Start full command listening
+      }, 800);
+    }
+  };
+
+  wakeRecognition.onend = () => {
+    // Restart wake listener if not in active listening mode
+    if (!isListening && !isSpeaking) {
+      setTimeout(startWakeListener, 500);
+    }
+  };
+
+  wakeRecognition.onerror = () => {
+    wakeListening = false;
+    setTimeout(startWakeListener, 2000);
+  };
+
+  try {
+    wakeRecognition.start();
+    wakeListening = true;
+  } catch(e) {}
+}
+
+// Start wake listener after boot
+setTimeout(startWakeListener, 3000);
+
 
 </script>
 </body>
