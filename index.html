@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1845,53 +1844,6 @@ loadYTPlayer();
 
 
 
-
-/* ══════════════════════════════════════════
-   WAKE WORD — "HEY JARVIS"
-══════════════════════════════════════════ */
-let wakeRec = null;
-let wakeActive = false;
-
-function startWakeListener() {
-  if (wakeActive || isListening || isSpeaking) return;
-  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SR) return;
-
-  try {
-    wakeRec = new SR();
-    wakeRec.continuous = false;
-    wakeRec.interimResults = false;
-    wakeRec.lang = 'en-AU';
-    wakeActive = true;
-
-    wakeRec.onresult = (e) => {
-      const t = e.results[0][0].transcript.toLowerCase();
-      if (t.includes('jarvis')) {
-        wakeActive = false;
-        setTimeout(() => {
-          jarvisSpeak('Yes sir?');
-          setTimeout(toggleListen, 1200);
-        }, 100);
-      } else {
-        wakeActive = false;
-        setTimeout(startWakeListener, 300);
-      }
-    };
-
-    wakeRec.onerror = () => { wakeActive = false; setTimeout(startWakeListener, 2000); };
-    wakeRec.onend = () => { 
-      wakeActive = false;
-      if (!isListening && !isSpeaking) setTimeout(startWakeListener, 500);
-    };
-
-    wakeRec.start();
-  } catch(e) {
-    wakeActive = false;
-  }
-}
-
-// Start after boot animation finishes
-setTimeout(startWakeListener, 4000);
 
 
 </script>
